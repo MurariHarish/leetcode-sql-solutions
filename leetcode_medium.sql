@@ -16,8 +16,7 @@ SET M = N - 1;
         FROM
             Employee
         ORDER BY Salary DESC
-        LIMIT 1 OFFSET M) AS SecondHighestSalary
-  );
+        LIMIT 1 OFFSET M) AS SecondHighestSalary);
 
 /* 178. Rank Scores */
 SELECT score,
