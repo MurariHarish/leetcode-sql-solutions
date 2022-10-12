@@ -118,3 +118,64 @@ FROM cte1
 GROUP BY accepter_id
 ORDER BY COUNT(accepter_id) DESC
 LIMIT 1;
+
+/* 608. Tree Node */
+SELECT id, 
+    CASE WHEN p_id IS NULL THEN 'Root' 
+    WHEN id IN (
+        SELECT t.p_id
+        FROM tree AS t
+        ) THEN 'Inner'
+    ELSE 'Leaf' END AS type
+FROM tree;
+
+/* 612. Shortest Distance in a Plane */
+WITH cte1 AS (
+    SELECT ROUND(SQRT(POW((two.x - one.x),2) + POW((two.y - one.x),2)),2) AS shortest
+    FROM point2d AS one, point2d AS two)
+
+SELECT MIN(shortest) AS shortest
+FROM cte1
+WHERE shortest > 0;
+
+/* 614. Second Degree Follower */
+SELECT followee AS follower, COUNT(followee) AS num
+FROM follow
+WHERE followee IN (
+    SELECT DISTINCT follower
+    FROM follow)
+GROUP BY followee;
+
+/* 626. Exchange Seats */
+SELECT (
+    CASE WHEN MOD (id,2) = 1 AND id != (SELECT COUNT(*) FROM seat) THEN id+1
+    WHEN MOD(id,2)=0 THEN id-1
+    ELSE id END)id, student
+FROM seat
+ORDER BY id;
+
+/* 1045. Customers Who Bought All Products */
+SELECT customer_id
+FROM customer
+GROUP BY customer_id
+HAVING COUNT(DISTINCT product_key) = (
+                                    SELECT COUNT(*) 
+                                    FROM product);
+
+/* 1070. Product Sales Analysis III */
+SELECT product_id, year AS first_year, quantity, price
+FROM sales
+WHERE sale_id IN (
+    SELECT sale_id
+    FROM sales
+    GROUP BY product_id
+    HAVING MIN(year));
+
+/* 1077. Project Employees III */
+SELECT project_id, employee_id
+FROM (
+	SELECT p.project_id, p.employee_id, DENSE_RANK() OVER(PARTITION BY project_id ORDER BY experience_years DESC) AS rank
+FROM Project p
+JOIN Employee e
+ON p.employee_id = e.employee_id) cte
+WHERE rank = 1;
