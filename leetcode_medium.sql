@@ -179,3 +179,44 @@ FROM Project p
 JOIN Employee e
 ON p.employee_id = e.employee_id) cte
 WHERE rank = 1;
+
+/* 1098. Unpopular Books */
+SELECT book_id, name
+FROM Books 
+WHERE available_from<'2019-05-23' AND book_id NOT IN(
+    SELECT book_id 
+    FROM Orders 
+    WHERE dispatch_date BETWEEN '2018-06-23' AND '2019-06-23' 
+    GROUP BY 1 
+    HAVING SUM(quantity)>=10);
+    
+/* 1107. New Users Daily Count */
+SELECT activity_date AS login_date, COUNT(DISTINCT(user_id)) AS user_count
+FROM traffic
+WHERE activity = 'login' AND activity_date BETWEEN '2019-03-30' AND '2019-06-30'
+GROUP BY login_date;
+
+/*1112. Highest Grade For Each Student*/
+WITH cte1 AS (
+    SELECT student_id, course_id, grade, RANK() OVER(PARTITION BY student_id ORDER BY grade DESC) AS ranking
+    FROM enrollments)
+SELECT student_id, MIN(course_id) AS course_id, grade
+FROM cte1
+WHERE ranking  = 1
+GROUP BY student_id;
+
+/*1126. Active Businesses*/
+WITH avg AS (
+    SELECT event_type, AVG(occurences) AS avg_occ
+    FROM events
+    GROUP BY event_type)
+    
+SELECT DISTINCT business_id
+FROM events
+JOIN avg ON avg.event_type = events.event_type
+WHERE occurences > avg_occ AND business_id  IN (SELECT business_id
+                                               FROM events
+                                               GROUP BY business_id
+                                               HAVING COUNT(event_type) > 1);
+                                               
+
