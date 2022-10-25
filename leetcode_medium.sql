@@ -219,4 +219,59 @@ WHERE occurences > avg_occ AND business_id  IN (SELECT business_id
                                                GROUP BY business_id
                                                HAVING COUNT(event_type) > 1);
                                                
+/* 1149. Article Views II */
+SELECT viewer_id AS id
+FROM views
+WHERE viewer_id NOT IN (SELECT viewer_id
+                       FROM views
+                       WHERE author_id = viewer_id)
+GROUP BY viewer_id, view_date
+HAVING COUNT(viewer_id) > 1;
 
+/* 1158. Market Analysis I */
+WITH cte1 AS (
+    SELECT buyer_id, COUNT(buyer_id) AS orders_in_2019
+    FROM orders
+    WHERE EXTRACT(year FROM order_date) = 2019
+    GROUP BY buyer_id)
+
+SELECT user_id, join_date, orders_in_2019
+FROM users
+LEFT JOIN cte1 ON user_id = buyer_id;
+
+/* 1158. 1164. Product Price at a Given Date */
+SELECT T1.product_id, IFNULL(T2.new_price,10) AS price
+FROM (SELECT DISTINCT product_id FROM Products) AS T1 
+  LEFT JOIN
+            (SELECT product_id, new_price
+              FROM Products
+              WHERE (product_id, change_date) IN (SELECT product_id, MAX(change_date) AS last_date
+                                                                                 FROM Products
+                                                                                  WHERE change_date <= '2019-08-16'
+                                                                                  GROUP BY product_id)) AS T2
+ ON T1.product_id = T2.product_id;
+ 
+/* 1174. Immediate Food Delivery II below */
+SELECT (SUM(imm) / COUNT(imm)) * 100 AS immediate_percentage
+FROM (
+    SELECT customer_id, IF(order_date = customer_pref_delivery_date,1,0) AS imm
+    FROM delivery
+    WHERE (customer_id, order_date) IN (
+        SELECT customer_id, MIN(order_date)
+        FROM delivery
+        GROUP BY customer_id)) AS l;
+        
+/* 1193. Monthly Transactions I */   
+WITH cte1 AS (
+    SELECT DATE_FORMAT(trans_date, '%Y-%m') AS month, country, COUNT(id) AS trans_count,         SUM(amount) AS trans_total_amount
+    FROM transactions
+    GROUP BY MONTH(trans_date), country),
+cte2 AS (
+    SELECT DATE_FORMAT(trans_date, '%Y-%m') AS month, COUNT(id) AS approved_count, SUM(amount) AS approved_total_amount
+    FROM transactions
+    WHERE state = 'approved'
+    GROUP BY MONTH(trans_date), country)
+SELECT cte1.month,country,trans_count,approved_count,trans_total_amount,approved_total_amount
+FROM cte1
+INNER JOIN cte2
+ON cte1.month = cte2.month
