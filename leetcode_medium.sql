@@ -274,4 +274,60 @@ cte2 AS (
 SELECT cte1.month,country,trans_count,approved_count,trans_total_amount,approved_total_amount
 FROM cte1
 INNER JOIN cte2
-ON cte1.month = cte2.month
+ON cte1.month = cte2.month;
+
+/* 1204. Last Person to Fit in the Bus */
+WITH cte1 AS (
+    SELECT *, SUM(weight) OVER(ORDER BY turn ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_weight
+    FROM queue)
+SELECT person_name
+FROM cte1
+WHERE running_weight <= 1000
+ORDER BY running_weight DESC
+LIMIT 1;
+
+/* 1205. Monthly Transactions II */
+WITH cte1 AS(
+    SELECT DATE_FORMAT(trans_date, '%Y-%m') AS month, country, COUNT(id) AS approved_count, SUM(amount) AS approved_amount 
+    FROM transactions
+    WHERE state = 'approved'
+    GROUP BY DATE_FORMAT(trans_date, '%Y-%m'), country),
+cte2 AS(
+    SELECT DATE_FORMAT(c.trans_date, '%Y-%m') AS month,  COUNT(c.trans_id) AS chargeback_count, t.amount AS chargeback_amount
+    FROM transactions AS t
+    JOIN chargebacks AS c ON c.trans_id = t.id
+    GROUP BY DATE_FORMAT(c.trans_date, '%Y-%m'))
+SELECT cte1.month, country, approved_count, approved_amount, chargeback_count, chargeback_amount
+FROM cte1
+FULL JOIN cte2 ON cte2.month = cte1.month;
+
+/* 1212. Team Scores in Football Tournament */
+SELECT team_id, team_name, SUM(CASE WHEN team_id = host_team AND host_goals > guest_goals THEN 3 
+                            WHEN team_id = guest_team AND guest_goals > host_goals THEN 3 
+                            WHEN team_id = host_team AND host_goals = guest_goals THEN 1
+                            WHEN team_id = guest_team AND host_goals = guest_goals THEN 1 ELSE 0
+                            END) AS num_points
+FROM teams
+LEFT JOIN matches ON team_id = host_team OR team_id = guest_team
+GROUP BY team_id
+ORDER BY num_points DESC, team_id;
+
+/* 1264. Page Recommendations */
+WITH cte1 AS (SELECT CASE WHEN user1_id = 1 THEN user2_id
+            WHEN user2_id = 1 THEN user1_id
+            END AS friends_id
+FROM friendship
+WHERE user1_id = 1 OR user2_id = 1)
+SELECT DISTINCT page_id AS recommended_page
+FROM likes
+JOIN cte1 ON user_id = friends_id
+WHERE page_id NOT IN (SELECT page_id
+                     FROM likes
+                     WHERE user_id = 1);
+            
+/* 1270. All People Report to the Given Manager */
+SELECT e1.employee_id
+FROM employees e1
+JOIN employees e2 ON e1.manager_id = e2.employee_id
+JOIN employees e3 ON e2.manager_id = e3.employee_id
+WHERE e3.manager_id = 1 AND e1.employee_id != 1;
