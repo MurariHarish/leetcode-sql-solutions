@@ -331,3 +331,53 @@ FROM employees e1
 JOIN employees e2 ON e1.manager_id = e2.employee_id
 JOIN employees e3 ON e2.manager_id = e3.employee_id
 WHERE e3.manager_id = 1 AND e1.employee_id != 1;
+
+/* 1285. Find the Start and End Number of Continuous Ranges */
+SELECT min(log_id) AS start_id, max(log_id) AS end_id
+FROM (
+    SELECT log_id, RANK() OVER(ORDER BY log_id) as num
+    FROM Logs) a
+GROUP BY log_id - num;
+
+/* 1285. 1308. Running Total for Different Genders */
+SELECT gender, day, SUM(score_points) OVER(PARTITION BY gender ORDER BY day) AS total
+FROM scores
+ORDER BY gender, day;
+
+/* 1321. Restaurant Growth */
+SELECT visited_on, SUM(amount) OVER(ORDER BY visited_on ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS amount, 
+AVG(amount) OVER(ORDER BY visited_on ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS average_amount
+FROM (SELECT visited_on, SUM(amount) AS amount
+     FROM customer
+     GROUP BY visited_on) t
+ORDER BY visited_on
+OFFSET 6 ROWS;
+
+/* 1341. Movie Rating */
+(SELECT name AS results
+FROM movierating mr
+JOIN users u ON u.user_id = mr.user_id
+GROUP BY u.user_id
+ORDER BY COUNT(mr.user_id) DESC
+LIMIT 1)
+UNION
+(SELECT m.title AS results
+FROM movierating mr
+JOIN movies m ON m.movie_id = mr.movie_id
+WHERE DATE_FORMAT(created_at, '%Y-%m') = '2020-02'
+GROUP BY mr.movie_id
+ORDER BY AVG(rating) DESC, title
+LIMIT 1)
+
+/* 1355. Activity Participants */
+SELECT activity
+FROM (SELECT activity,
+               COUNT(1) cnt,
+               MAX(Count(1))
+                 OVER() max_cnt,
+               MIN(Count(1))
+                 OVER() min_cnt
+        FROM   friends
+        GROUP  BY activity) a
+WHERE  cnt != max_cnt
+       AND cnt != min_cnt;
