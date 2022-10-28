@@ -381,3 +381,52 @@ FROM (SELECT activity,
         GROUP  BY activity) a
 WHERE  cnt != max_cnt
        AND cnt != min_cnt;
+       
+/* 1364. Number of Trusted Contacts of a Customer */
+WITH cte1 AS (SELECT i.invoice_id, cus.customer_name, i.price, COUNT(con.user_id) AS contacts_cnt
+FROM invoices AS i
+JOIN customers AS cus ON i.user_id = cus.customer_id
+LEFT JOIN contacts AS con ON i.user_id = con.user_id
+GROUP BY i.invoice_id),
+cte2 AS (SELECT customer_name, COUNT(contact_name) AS trusted_contacts_cnt
+FROM contacts
+JOIN customers ON contacts.user_id = customers.customer_id
+WHERE contact_name IN (SELECT customer_name
+                      FROM customers)
+GROUP BY customer_id)
+SELECT invoice_id, cte1.customer_name, price, contacts_cnt, IFNULL(trusted_contacts_cnt,0) AS trusted_contacts_cnt
+FROM cte1
+LEFT JOIN cte2 ON cte2.customer_name = cte1.customer_name
+ORDER BY invoice_id;
+
+/* 1393. Capital Gain/Loss */
+SELECT stock_name, SUM(
+    CASE WHEN operation = 'Buy' THEN -price 
+    ELSE price 
+    END
+) AS capital_gain_loss
+FROM stocks
+GROUP BY stock_name;
+
+/* 1440. Evaluate Boolean Expression */
+SELECT e.left_operand, e.operator, e.right_operand,
+    (
+        CASE
+            WHEN e.operator = '<' AND v1.value < v2.value THEN 'true'
+            WHEN e.operator = '=' AND v1.value = v2.value THEN 'true'
+            WHEN e.operator = '>' AND v1.value > v2.value THEN 'true'
+            ELSE 'false'
+        END
+    ) AS value
+FROM Expressions e
+JOIN Variables v1
+ON e.left_operand = v1.name
+JOIN Variables v2
+ON e.right_operand = v2.name;
+
+/* 1445. Apples & Oranges */
+SELECT sale_date, SUM(
+    CASE WHEN fruit = 'oranges' THEN -sold_num ELSE sold_num END) AS diff
+FROM sales
+GROUP BY sale_date;
+
