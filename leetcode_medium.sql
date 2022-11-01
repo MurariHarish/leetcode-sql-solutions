@@ -430,3 +430,46 @@ SELECT sale_date, SUM(
 FROM sales
 GROUP BY sale_date;
 
+/* 1454. Active Users */
+SELECT DISTINCT l1.id,
+(SELECT name FROM Accounts WHERE id = l1.id) AS name
+FROM Logins l1
+JOIN Logins l2 ON l1.id = l2.id AND DATEDIFF(l2.login_date, l1.login_date) BETWEEN 1 AND 4
+GROUP BY l1.id, l1.login_date
+HAVING COUNT(DISTINCT l2.login_date) = 4;
+
+/* 1459. Rectangles Area */
+SELECT p1.id AS P1, p2.id AS P2, ABS((p1.x_value - p2.x_value) * (p1.y_value - p2.y_value)) AS AREA
+FROM points p1 
+JOIN points p2 ON p1.id <= p2.id
+WHERE ABS((p1.x_value - p2.x_value) * (p1.y_value - p2.y_value)) != 0
+ORDER BY area DESC, p1.id, p2.id;
+
+/* 1468. Calculate Salaries */
+SELECT company_id, employee_id, employee_name
+,ROUND(CASE
+    WHEN MAX(salary) over(PARTITION BY company_id) < 1000 THEN salary
+    WHEN MAX(salary) over(PARTITION BY company_id) BETWEEN 1000 AND 10000 THEN salary*.76
+    ELSE salary*.51
+END,0) salary
+FROM salaries;
+
+/* 1501. Countries You Can Safely Invest In */
+SELECT co.name AS country
+FROM country AS co
+JOIN person AS p ON SUBSTRING(phone_number,1,3) = country_code
+JOIN calls AS ca ON p.id IN (ca.caller_id, ca.callee_id)
+GROUP BY co.name
+HAVING AVG(duration) > (
+    SELECT AVG(duration)
+    FROM calls);
+
+/* 1532. The Most Recent Three Orders */
+WITH cte1 AS (
+    SELECT customer_id, order_id, order_date, RANK() OVER(PARTITION BY customer_id ORDER BY order_date DESC) AS rank
+    FROM orders)
+SELECT name AS customer_name, cte1.customer_id, order_id, order_date
+FROM customers
+JOIN cte1 ON cte1.customer_id = customers.customer_id
+WHERE rank <= 3
+ORDER BY customer_name, cte1.customer_id, order_date DESC
