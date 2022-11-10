@@ -472,4 +472,52 @@ SELECT name AS customer_name, cte1.customer_id, order_id, order_date
 FROM customers
 JOIN cte1 ON cte1.customer_id = customers.customer_id
 WHERE rank <= 3
-ORDER BY customer_name, cte1.customer_id, order_date DESC
+ORDER BY customer_name, cte1.customer_id, order_date DESC;
+
+/* 1549. The Most Recent Orders for Each Product */
+WITH table1 AS (SELECT order_id, order_date, customer_id, product_id, RANK() OVER(PARTITION BY product_id ORDER BY order_date DESC) AS rank
+   FROM orders)
+SELECT product_name, table1.product_id, order_id, order_date
+FROM products
+JOIN table1 ON products.product_id = table1.product_id
+WHERE rank = 1
+ORDER BY product_name, table1.product_id, order_id;
+
+/* 1555. Bank Account Summary */
+WITH table1 AS (SELECT user_id,IFNULL(SUM(CASE WHEN user_id = paid_by THEN -amount
+                                WHEN user_id = paid_to THEN amount END),0) AS credit_amount
+FROM users
+LEFT JOIN transactions ON user_id IN (paid_by, paid_to)
+GROUP BY user_id)
+SELECT users.user_id, user_name, (credit+credit_amount) AS credit, CASE WHEN (credit+credit_amount) < 0 THEN 'Yes' ELSE 'No' END AS credit_limit_breached
+FROM users
+LEFT JOIN table1 ON table1.user_id = users.user_id;
+
+/* 1596. The Most Frequently Ordered Products for Each Customer */
+WITH table1 AS (SELECT customer_id, product_id, COUNT(order_id) AS f, RANK() OVER(PARTITION BY customer_id ORDER BY COUNT(order_id) DESC) AS rank 
+FROM orders
+GROUP BY customer_id, product_id)
+SELECT customer_id, table1.product_id, product_name
+FROM table1
+JOIN products ON products.product_id = table1.product_id
+WHERE rank = 1;
+
+/* 1613. Find the Missing IDs */
+WITH RECURSIVE id_seq AS (
+    SELECT 1 as initial_num
+    UNION 
+    SELECT initial_num + 1
+    FROM id_seq
+    WHERE initial_num < (SELECT MAX(customer_id) FROM Customers) 
+)
+SELECT initial_num AS ids
+FROM id_seq
+WHERE initial_num NOT IN (SELECT customer_id FROM Customers);
+
+/* 1699. Number of Calls Between Two Persons */
+SELECT LEAST (from_id, to_id) AS person1,
+        GREATEST (from_id, to_id) AS person2,
+    COUNT(duration) AS call_count,
+    SUM(duration) AS total_duration       
+FROM Calls
+GROUP BY person1,person2;
